@@ -103,6 +103,21 @@ void stop_server() {
 }
 
 void serve_client(SOCKET connection) {
+    char* request = NULL;
+    int request_length = 0;
+    int num_read;
+    while (1) {
+        char buffer[257] = {0};
+        num_read = recv(connection, buffer, 256, 0);
+        request_length += num_read;
+        request = HeapReAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, request, request_length);
+        strcat(request, buffer);
+        if (num_read < 256) {
+            break;
+        }
+        struct http_request parsed_request = parse_http(request, request_length);
+        HeapFree(GetProcessHeap(), HEAP_ZERO_MEMORY, request);
+    }
 
 }
 
