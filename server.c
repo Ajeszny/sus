@@ -3,6 +3,7 @@
 //
 
 #include "server.h"
+#include "static.h"
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <stdbool.h>
@@ -14,10 +15,19 @@ SOCKET listener = INVALID_SOCKET;
 _Atomic int running = false;
 _Atomic int file_size;
 HANDLE mutex_listener;
+HANDLE mutex_endpoint;
 void serve_client(SOCKET connection);
-DWORD WINAPI client_serve_handler( LPVOID client ) {
+DWORD WINAPI client_serve_handler(LPVOID client) {
     serve_client((SOCKET)client);
 }
+
+struct endpoint {
+    char* route;
+    struct http_response (*handler)(struct http_request);
+};
+
+struct endpoint* endpoints;
+static _Atomic int endpoints_number;
 
 int init_server(int port) {
     char port_buf[6] = {0};
@@ -40,6 +50,10 @@ int init_server(int port) {
         return -2;
     }
     mutex_listener = CreateMutex(
+            NULL,              // default security attributes
+            FALSE,             // initially not owned
+            NULL);             // unnamed mutex
+    mutex_endpoint = CreateMutex(
             NULL,              // default security attributes
             FALSE,             // initially not owned
             NULL);             // unnamed mutex
@@ -115,9 +129,31 @@ void serve_client(SOCKET connection) {
         if (num_read < 256) {
             break;
         }
-        struct http_request parsed_request = parse_http(request, request_length);
-        HeapFree(GetProcessHeap(), HEAP_ZERO_MEMORY, request);
     }
-
+    struct http_request parsed_request = parse_http(request, request_length);
+    HeapFree(GetProcessHeap(), HEAP_ZERO_MEMORY, request);
+    struct http_response (*handler)(struct http_request) = NULL;
+    DWORD wait_result = WaitForSingleObject(mutex_listener, INFINITE);
+    if (wait_result == WAIT_OBJECT_0) {
+        for (int i = 0; i < endpoints_number; ++i) {
+            if (strcmp(endpoints[i].route, parsed_request.path) == 0) {
+                handler = endpoints[i].handler;
+            }
+        }
+        ReleaseMutex(mutex_listener);
+    } else {
+        return;
+    }
+    struct http_response response;
+    if (handler) {
+        response = handler(parsed_request);
+    } else {
+        response = serve_static_file(parsed_request);
+    }
+    free_request(parsed_request);
+    struct byte_array packed_for_sending = formulate_response(response);
+    free_response(response);
+    send(connection, packed_for_sending.arr, packed_for_sending.size, 0);
+    packed_for_sending.size = 0;
+    HeapFree(GetProcessHeap(), HEAP_ZERO_MEMORY, packed_for_sending.arr);
 }
-

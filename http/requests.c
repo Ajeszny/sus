@@ -83,3 +83,18 @@ void parse_row(struct http_request* request, char* row) {
         return;
     }
 }
+
+void free_request(struct http_request r) {
+    HeapFree(GetProcessHeap(), HEAP_ZERO_MEMORY, r.connection);
+    HeapFree(GetProcessHeap(), HEAP_ZERO_MEMORY, r.body);
+    HeapFree(GetProcessHeap(), HEAP_ZERO_MEMORY, r.path);
+    HeapFree(GetProcessHeap(), HEAP_ZERO_MEMORY, r.cookie);
+    HeapFree(GetProcessHeap(), HEAP_ZERO_MEMORY, r.accept_encoding);
+    HeapFree(GetProcessHeap(), HEAP_ZERO_MEMORY, r.accept_language);
+    HeapFree(GetProcessHeap(), HEAP_ZERO_MEMORY, r.accept);
+    HeapFree(GetProcessHeap(), HEAP_ZERO_MEMORY, r.user_agent);
+    HeapFree(GetProcessHeap(), HEAP_ZERO_MEMORY, r.host);
+    HeapFree(GetProcessHeap(), HEAP_ZERO_MEMORY, r.version);
+    HeapFree(GetProcessHeap(), HEAP_ZERO_MEMORY, r.payload);
+    r.body_size = 0;
+}

@@ -5,6 +5,7 @@
 #ifndef SUS_SERVER_H
 #define SUS_SERVER_H
 #include "http/requests.h"
+#include "http/response.h"
 int init_server(int port);
 void stop_server();
 #endif //SUS_SERVER_H

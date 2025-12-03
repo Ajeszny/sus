@@ -33,4 +33,5 @@ struct http_request {
 };
 
 struct http_request parse_http(const char* http, size_t blocksize);
+void free_request(struct http_request r);
 #endif //SUS_REQUESTS_H

@@ -8,7 +8,12 @@ add_executable(sus main.c
         server.h
         http/requests.c
         http/requests.h
-        unit_tests.c)
+        unit_tests.c
+        static.c
+        static.h
+        http/response.c
+        http/response.h
+)
 
 add_executable(unit_testing
         http/requests.c
