@@ -10,7 +10,6 @@ enum type {
     HEAD,
     POST,
     PUT,
-    DELETE,
     CONNECT,
     OPTIONS,
     TRACE,
@@ -29,7 +28,7 @@ struct http_request {
     char* connection;
     char* cookie;
     uint8_t* body;
-    size_t body_size
+    size_t body_size;
 };
 
 struct http_request parse_http(const char* http, size_t blocksize);

@@ -7,5 +7,6 @@
 #include "http/requests.h"
 #include "http/response.h"
 int init_server(int port);
+void start_listening();
 void stop_server();
 #endif //SUS_SERVER_H

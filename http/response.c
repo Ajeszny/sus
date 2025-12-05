@@ -6,11 +6,11 @@
 #include "response.h"
 
 void add_header(struct http_response* response, const char* header_name, const char* header_value) {
+    response->headers_num += 1;
     response->headers[response->headers_num-1].name = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, (strlen(header_name)+1)*sizeof(char));
     strcpy(response->headers[response->headers_num-1].name, header_name);
     response->headers[response->headers_num-1].body = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, (strlen(header_value)+1)*sizeof(char));
     strcpy(response->headers[response->headers_num-1].body, header_value);
-    response->headers_num += 1;
 }
 
 void free_response(struct http_response r) {
@@ -32,16 +32,18 @@ struct byte_array formulate_response(struct http_response r) {
     size += strlen("HTTP/1.1 ")
             + strlen(digits)
             + 1//space
-            + strlen(r.message);
+            + strlen(r.message)
+            + 1//\n
+            ;
     for (int i = 0; i < r.headers_num; ++i) {
         size += strlen(r.headers[i].name) + 1;
-        size += strlen(r.headers[i].body);
+        size += strlen(r.headers[i].body) + 1;
     }
-    size += 1;//\n
+    size += 2;//\n and once more if the code decides to put null-terminator there
     struct byte_array result = {0};
     result.arr = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, size*sizeof(char)+r.body_size);
     result.size = size+r.body_size;
-    strcat(result.arr, "HTTP/1/1 ");
+    strcat(result.arr, "HTTP/1.1 ");
     strcat(result.arr, digits);
     strcat(result.arr, " ");
     strcat(result.arr, r.message);
@@ -53,6 +55,6 @@ struct byte_array formulate_response(struct http_response r) {
         strcat(result.arr, "\n");
     }
     strcat(result.arr, "\n");
-    memcpy(result.arr + size, r.body, r.body_size);
+    if (r.body_size) memcpy(result.arr + size, r.body, r.body_size);
     return result;
 }

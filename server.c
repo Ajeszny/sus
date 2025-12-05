@@ -83,8 +83,12 @@ void start_listening() {
             break;
         }
         ++handlers_num;
-        thread_handlers = HeapReAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, thread_handlers, handlers_num*sizeof(LPDWORD));
-        thread_identifiers = HeapReAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, thread_handlers, handlers_num*sizeof(LPDWORD));
+        thread_handlers = (thread_handlers) ?
+                HeapReAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY|HEAP_GENERATE_EXCEPTIONS, thread_handlers, handlers_num*sizeof(LPDWORD)) :
+                HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY|HEAP_GENERATE_EXCEPTIONS, handlers_num*sizeof(LPDWORD));
+        thread_identifiers = (thread_identifiers) ?
+                HeapReAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY|HEAP_GENERATE_EXCEPTIONS, thread_handlers, handlers_num*sizeof(LPDWORD)) :
+                HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, handlers_num*sizeof(LPDWORD));
 
         thread_handlers[handlers_num-1] = CreateThread(
                 NULL,
@@ -118,13 +122,15 @@ void stop_server() {
 
 void serve_client(SOCKET connection) {
     char* request = NULL;
-    int request_length = 0;
+    int request_length = 1;
     int num_read;
     while (1) {
         char buffer[257] = {0};
         num_read = recv(connection, buffer, 256, 0);
         request_length += num_read;
-        request = HeapReAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, request, request_length);
+        request = (request) ?
+                HeapReAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, request, request_length)
+                : HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, request_length);
         strcat(request, buffer);
         if (num_read < 256) {
             break;
@@ -154,6 +160,7 @@ void serve_client(SOCKET connection) {
     struct byte_array packed_for_sending = formulate_response(response);
     free_response(response);
     send(connection, packed_for_sending.arr, packed_for_sending.size, 0);
+    closesocket(connection);
     packed_for_sending.size = 0;
     HeapFree(GetProcessHeap(), HEAP_ZERO_MEMORY, packed_for_sending.arr);
 }
