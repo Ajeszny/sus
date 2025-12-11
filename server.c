@@ -10,6 +10,11 @@
 #include <stdio.h>
 #include <stdint.h>
 
+struct endpoint {
+    const char* route;
+    struct http_response (*handler)(struct http_request);
+};
+
 int last_error;
 SOCKET listener = INVALID_SOCKET;
 _Atomic int running = false;
@@ -20,12 +25,6 @@ void serve_client(SOCKET connection);
 DWORD WINAPI client_serve_handler(LPVOID client) {
     serve_client((SOCKET)client);
 }
-
-struct endpoint {
-    char* route;
-    struct http_response (*handler)(struct http_request);
-};
-
 struct endpoint* endpoints;
 static _Atomic int endpoints_number;
 
@@ -163,4 +162,20 @@ void serve_client(SOCKET connection) {
     closesocket(connection);
     packed_for_sending.size = 0;
     HeapFree(GetProcessHeap(), HEAP_ZERO_MEMORY, packed_for_sending.arr);
+}
+
+int add_endpoint(const char* route, struct http_response (*handler)(struct http_request)) {
+    struct endpoint e = {route, handler};
+    DWORD wait_result = WaitForSingleObject(mutex_listener, INFINITE);
+    if (wait_result == WAIT_OBJECT_0) {
+        ++endpoints_number;
+        endpoints = (endpoints) ?
+                    HeapReAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, endpoints, endpoints_number*sizeof(struct endpoint))
+                                : HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, endpoints_number*sizeof(struct endpoint));
+        endpoints[endpoints_number-1] = e;
+        ReleaseMutex(mutex_listener);
+    } else {
+        return -1;
+    }
+    return 0;
 }

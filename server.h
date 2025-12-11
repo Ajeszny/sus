@@ -9,4 +9,5 @@
 int init_server(int port);
 void start_listening();
 void stop_server();
+int add_endpoint(const char* route, struct http_response (*handler)(struct http_request));
 #endif //SUS_SERVER_H
