@@ -7,6 +7,13 @@
 
 void add_header(struct http_response* response, const char* header_name, const char* header_value) {
     response->headers_num += 1;
+    struct header* new_headers = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(struct header)*response->headers_num);
+    if (response->headers){
+        struct header *old_headers = response->headers;
+        memcpy(new_headers, old_headers, sizeof(struct header) * (response->headers_num - 1));
+        HeapFree(GetProcessHeap(), HEAP_ZERO_MEMORY, old_headers);
+    }
+    response->headers = new_headers;
     response->headers[response->headers_num-1].name = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, (strlen(header_name)+1)*sizeof(char));
     strcpy(response->headers[response->headers_num-1].name, header_name);
     response->headers[response->headers_num-1].body = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, (strlen(header_value)+1)*sizeof(char));

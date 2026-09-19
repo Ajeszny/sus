@@ -25,13 +25,11 @@ void init_default_endpoints() {
             NULL);             // unnamed mutex
 }
 
-struct http_response not_found_default(struct http_request request) {
+inline struct http_response populate_response() {
     struct http_response response = {0};
-    response.code = 404;
     response.body = NULL;
     response.body_size = 0;
-    response.message = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(char)*(strlen("Not found")+1));
-    response.headers = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(struct header)*7);
+    response.headers = NULL;
     const char* header_names[] = {"Server:", "Mime-Version:", "Content-Type:", "Content-Length:", "Expires:", "Date:", "Connection:"};
     char content_length[16];
     itoa(response.body_size, content_length, 10);
@@ -49,6 +47,13 @@ struct http_response not_found_default(struct http_request request) {
     for (int i = 0; i < 7; ++i) {
         add_header(&response, header_names[i], header_values[i]);
     }
+    return response;
+}
+
+struct http_response not_found_default(struct http_request request) {
+    struct http_response response = populate_response();
+    response.code = 404;
+    response.message = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(char)*(strlen("Not found")+1));
     return response;
 }
 struct http_response serve_static_file_default(struct http_request request) {
@@ -73,29 +78,11 @@ struct http_response serve_static_file_default(struct http_request request) {
         HeapFree(GetProcessHeap(), HEAP_ZERO_MEMORY, buffer);
         return not_found(request);
     }
-    struct http_response response = {0};
+    struct http_response response = populate_response();
     response.code = 200;
     response.body = buffer;
     response.body_size = fsize;
     response.message = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(char)*(strlen("Not found")+1));
-    response.headers = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(struct header)*7);
-    const char* header_names[] = {"Server:", "Mime-Version:", "Content-Type:", "Content-Length:", "Expires:", "Date:", "Connection:"};
-    char content_length[16];
-    itoa(response.body_size, content_length, 10);
-    time_t rawtime, newtime;
-    struct tm * timeinfo, *newtimeinfo;
-    time (&rawtime);
-    newtime = rawtime + 10000;//10000 seconds from now
-    timeinfo = localtime (&rawtime);
-    newtimeinfo = localtime (&newtime);
-    char datetime_when[255];
-    char datetime_to[255];
-    strftime(datetime_when, 255, "%c", timeinfo);
-    strftime(datetime_to, 255, "%c", newtimeinfo);
-    const char* header_values[] = {"SUS", "1.0", determine_mime_type(request.path), content_length, datetime_when, datetime_to, "close"};//Create an extension/MM determining function later
-    for (int i = 0; i < 7; ++i) {
-        add_header(&response, header_names[i], header_values[i]);
-    }
     return response;
 }
 

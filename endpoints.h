@@ -11,4 +11,5 @@ struct http_response serve_static_file(struct http_request request);
 void set_notfound(struct http_response (*handler)(struct http_request));
 void override_static(struct http_response (*handler)(struct http_request));
 void init_default_endpoints();
+inline struct http_response populate_response();
 #endif //SUS_ENDPOINTS_H
