@@ -7,6 +7,7 @@
 #include <fileapi.h>
 #include <handleapi.h>
 #include "static.h"
+#include "mime/types.h"
 
 struct http_response not_found(struct http_request request) {
     struct http_response response = {0};
@@ -76,7 +77,7 @@ struct http_response serve_static_file(struct http_request request) {
     char datetime_to[255];
     strftime(datetime_when, 255, "%c", timeinfo);
     strftime(datetime_to, 255, "%c", newtimeinfo);
-    const char* header_values[] = {"SUS", "1.0", "image/jpeg", content_length, datetime_when, datetime_to, "close"};//Create an extension/MM determining function later
+    const char* header_values[] = {"SUS", "1.0", determine_mime_type(request.path), content_length, datetime_when, datetime_to, "close"};//Create an extension/MM determining function later
     for (int i = 0; i < 7; ++i) {
         add_header(&response, header_names[i], header_values[i]);
     }

@@ -12,12 +12,16 @@ add_executable(sus main.c
         static.h
         http/response.c
         http/response.h
+        mime/types.c
+        mime/types.h
 )
 
 add_executable(unit_testing
         http/requests.c
         unit_tests.c
         unit_tests.c
-        unit_tests.c)
+        unit_tests.c
+        mime/types.c
+        mime/types.h)
 target_link_libraries(sus ws2_32)
 target_link_libraries(unit_testing ws2_32)
