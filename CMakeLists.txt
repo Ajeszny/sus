@@ -8,8 +8,8 @@ add_executable(sus main.c
         server.h
         http/requests.c
         http/requests.h
-        static.c
-        static.h
+        endpoints.c
+        endpoints.h
         http/response.c
         http/response.h
         mime/types.c
@@ -22,6 +22,7 @@ add_executable(unit_testing
         unit_tests.c
         unit_tests.c
         mime/types.c
-        mime/types.h)
+        mime/types.h
+)
 target_link_libraries(sus ws2_32)
 target_link_libraries(unit_testing ws2_32)

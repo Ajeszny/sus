@@ -6,10 +6,26 @@
 #include <time.h>
 #include <fileapi.h>
 #include <handleapi.h>
-#include "static.h"
+#include <winsock2.h>
+#include "endpoints.h"
 #include "mime/types.h"
 
-struct http_response not_found(struct http_request request) {
+
+HANDLE mutex_notfound;
+HANDLE mutex_static;
+
+void init_default_endpoints() {
+    mutex_notfound = CreateMutex(
+            NULL,              // default security attributes
+            FALSE,             // initially not owned
+            NULL);             // unnamed mutex
+    mutex_static = CreateMutex(
+            NULL,              // default security attributes
+            FALSE,             // initially not owned
+            NULL);             // unnamed mutex
+}
+
+struct http_response not_found_default(struct http_request request) {
     struct http_response response = {0};
     response.code = 404;
     response.body = NULL;
@@ -35,8 +51,7 @@ struct http_response not_found(struct http_request request) {
     }
     return response;
 }
-
-struct http_response serve_static_file(struct http_request request) {
+struct http_response serve_static_file_default(struct http_request request) {
     char* truepath = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(char)*(1+strlen(request.path)+strlen("static/")));
     strcat(truepath, "static");
     strcat(truepath, request.path);
@@ -82,4 +97,42 @@ struct http_response serve_static_file(struct http_request request) {
         add_header(&response, header_names[i], header_values[i]);
     }
     return response;
+}
+
+struct http_response (*not_found_ptr)(struct http_request request) = not_found_default;
+struct http_response (*serve_static_file_ptr)(struct http_request request) = serve_static_file_default;
+
+struct http_response not_found(struct http_request request) {
+    DWORD wait_result = WaitForSingleObject(mutex_notfound, INFINITE);
+    if (wait_result == WAIT_OBJECT_0) {
+        struct http_response (*hihi)(struct http_request request) = not_found_ptr;
+        ReleaseMutex(mutex_notfound);
+        return hihi(request);
+    }
+}
+
+struct http_response serve_static_file(struct http_request request) {
+    DWORD wait_result = WaitForSingleObject(mutex_static, INFINITE);
+
+    if (wait_result == WAIT_OBJECT_0) {
+        struct http_response (*hihi)(struct http_request request) = serve_static_file_ptr;
+        ReleaseMutex(mutex_static);
+        return hihi(request);
+    }
+}
+
+void set_notfound(struct http_response (*handler)(struct http_request)) {
+    DWORD wait_result = WaitForSingleObject(mutex_notfound, INFINITE);
+    if (wait_result == WAIT_OBJECT_0) {
+        not_found_ptr = handler;
+        ReleaseMutex(mutex_notfound);
+    }
+}
+
+void override_static(struct http_response (*handler)(struct http_request)) {
+    DWORD wait_result = WaitForSingleObject(mutex_static, INFINITE);
+    if (wait_result == WAIT_OBJECT_0) {
+        serve_static_file_ptr = handler;
+        ReleaseMutex(mutex_static);
+    }
 }

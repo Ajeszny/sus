@@ -3,7 +3,7 @@
 //
 
 #include "server.h"
-#include "static.h"
+#include "endpoints.h"
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <stdbool.h>
@@ -29,6 +29,7 @@ struct endpoint* endpoints;
 static _Atomic int endpoints_number;
 
 int init_server(int port) {
+    init_default_endpoints();
     char port_buf[6] = {0};
     itoa(port, port_buf, 10);
     WSADATA goof;
