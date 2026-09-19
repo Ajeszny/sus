@@ -16,6 +16,8 @@ add_executable(sus main.c
 
 add_executable(unit_testing
         http/requests.c
+        unit_tests.c
+        unit_tests.c
         unit_tests.c)
 target_link_libraries(sus ws2_32)
 target_link_libraries(unit_testing ws2_32)

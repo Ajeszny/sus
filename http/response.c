@@ -39,7 +39,7 @@ struct byte_array formulate_response(struct http_response r) {
         size += strlen(r.headers[i].name) + 1;
         size += strlen(r.headers[i].body) + 1;
     }
-    size += 2;//\n and once more if the code decides to put null-terminator there
+    size += 1;//\n and once more if the code decides to put null-terminator there
     struct byte_array result = {0};
     result.arr = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, size*sizeof(char)+r.body_size);
     result.size = size+r.body_size;
